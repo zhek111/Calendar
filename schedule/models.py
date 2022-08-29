@@ -1,4 +1,5 @@
 import datetime
+from itertools import chain
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
@@ -20,6 +21,14 @@ def time_to_float(time):
         float_value += 0.5
     return float_value
 
+
+def get_event_duration(start, stop):
+    duration = []
+    result = start
+    while result < stop:
+        duration.append(result)
+        result += 0.5
+    return duration
 
 
 class WorkDay(models.Model):
@@ -58,40 +67,39 @@ class WorkDay(models.Model):
             raise ValidationError(message=errors)
 
     # TODO прочитать по values и values list, сделать авиабл тайм (ниже пояснения)
-    def time_to_float(time):
-        float_value = float(time.strftime("%H"))
-        if time.strftime("%M") == "30":
-            float_value += 0.5
-        return float_value
 
     def available_time(self):
         start = time_to_float(self.start)
         start_break = time_to_float(self.start_break_time)
         finish = time_to_float(self.finish)
         finist_break = time_to_float(self.finish_break_time)
-        count_lessons = self.lessons.count()
+        duration_night = list(map(get_event_duration, (0.0, finish), (start, 24.0)))
+        duration_night = list(chain(*duration_night))
+        duration_break = get_event_duration(start_break, finist_break)
         lessons = self.lessons.all().order_by('start')
         start_lessons = []
         finish_lessons = []
         for lesson in lessons:
             start_lessons.append(time_to_float(lesson.start))
             finish_lessons.append(time_to_float(lesson.start) + time_to_float(lesson.duration_lessons))
-        result = []
-        # Можно сделать список всего времени дня, с интервалом в полчаса 0, 0.5...23, 23.5, и список занятого 
-        # времени, к каждому старту времени применив функцию, (если время + 0.5 меньше финиша, печатаем это время, 
-        # + 0.5, пока время не станет меньше финиша. Таким образом у нас появляются занятые времени, как список. 
-        # Далее мы сравниваем его с обычнм списком всех времен, и получаем список свободного времени. Опять прогоняем
-        # его через функцию, если значение элементы времени + 0.5 равно значению времени(как элемент 
-        # последовтельности)+1 то считаем дальше, пока нет. выводим первый элемент, и когда прервалось. Дальше берем 
-        # элемент следующий(предыдущие пропускаем), и т.д Либо же мы делаем это черед проверки, но их ОЧЕНЬ много, 
-        # с чем сравнивать (есть ли перерыв, где находится время урока(до него, или после, с чем сравнивать, 
-        # каждый раз новый урок надо опять сравнивать и т.д. 
-        for start in start_lessons:
-            if start_lessons > start:
-                pass
-        pass
+        duration_lessons = list(map(get_event_duration, start_lessons, finish_lessons))
+        duration_lessons = list(chain(*duration_lessons))
+        all_hours = list(range(0, 24))
+        all_time = list(map(lambda x: [x, x + 0.5], all_hours))
+        all_time = set(chain(*all_time))
+        busy_time = set(duration_break + duration_lessons + duration_night)
+        free_time = sorted(list(all_time - busy_time))
+        list_free_time = []
+        for i, d in enumerate(free_time):
+            if free_time[i - 1] != d - 0.5:
+                start = d
+            if i + 1 < len(free_time):
+                if free_time[i + 1] != d + 0.5:
+                    list_free_time.append((start, d + 0.5))
+            if i + 1 >= len(free_time):
+                list_free_time.append((start, d + 0.5))
+        return list_free_time
 
-    # ((9,11),(12,16),(17,18))
     class Meta:
         db_table = 'Days'
         ordering = ['date']
@@ -136,7 +144,7 @@ class Lesson(models.Model):
                f'{self.get_subject_display()} | {self.comment}'
 
     class Meta:
-        db_table = 'lessons'
+        db_table = 'Lessons'
         verbose_name = 'Lesson'
         verbose_name_plural = 'Lessons'
         unique_together = ['day', 'start']
@@ -144,4 +152,4 @@ class Lesson(models.Model):
 
 # TODO может быть добавить place = дома, работа, онлайн. чойзес. Или перегруз, пофик? TODO определить класс мета 
 #  везде подробно и создать базу и миграции заново (не работает, мб где то не так зарегистрированы таблицы, 
-#  т.к у них новые имена) 
+#  т.к у них новые имена)
