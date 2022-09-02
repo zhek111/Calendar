@@ -22,6 +22,7 @@ def time_of_function(function):
         result = function(*args, **kvargs)
         print("Used time:", datetime.datetime.now() - startTime)
         return result
+
     return wrapper
 
 
@@ -40,6 +41,7 @@ def get_event_duration(start, stop):
         result += 0.5
     return set(duration)
 
+
 def get_time_interval(time):
     intervals = []
     for i, d in enumerate(time):
@@ -51,7 +53,7 @@ def get_time_interval(time):
         if i + 1 >= len(time):
             intervals.append((start, d + 0.5))
     return intervals
-    
+
 
 class WorkDay(models.Model):
     available = models.BooleanField(default=True, verbose_name='availability',
@@ -93,7 +95,6 @@ class WorkDay(models.Model):
         if errors:
             raise ValidationError(message=errors)
 
-#TODO метод клин, перерывы, их уникальность и наличие, чтобы не было ошибок. 
     @time_of_function
     def available_time(self):
         if not self.available:
@@ -101,12 +102,13 @@ class WorkDay(models.Model):
         duration_day = get_event_duration(time_to_float(self.start), time_to_float(self.finish))
         duration_break = set()
         if self.start_break_time:
-            duration_break = get_event_duration(time_to_float(self.start_break_time), time_to_float(self.finish_break_time))
+            duration_break = get_event_duration(time_to_float(self.start_break_time),
+                                                time_to_float(self.finish_break_time))
         duration_lessons = set()
         if self.lessons.count() > 0:
             lessons = self.lessons.all()
             start_lessons = [time_to_float(lesson.start) for lesson in lessons]
-            finish_lessons = [time_to_float(lesson.start) + time_to_float(lesson.duration_lessons) for lesson in lessons]
+            finish_lessons = [time_to_float(lesson.start) + time_to_float(lesson.duration) for lesson in lessons]
             duration_lessons = list(map(get_event_duration, start_lessons, finish_lessons))
             duration_lessons = set(chain(*duration_lessons))
         free_time = sorted(list(duration_day - duration_lessons - duration_break))
@@ -145,15 +147,14 @@ class Lesson(models.Model):
         (HOUR2, '2 hours')
     ]
 
-    duration_lessons = models.TimeField(choices=TIME_CHOISES, default=HOUR,
-                                        verbose_name='lesson duration', help_text='select lesson duration')
-    #TODO переделать на просто дюрейшн, без лесонС
+    duration = models.TimeField(choices=TIME_CHOISES, default=HOUR,
+                                verbose_name='lesson duration', help_text='select lesson duration')
     created_at = models.DateTimeField(auto_now_add=True)
     change_at = models.DateTimeField(auto_now=True)
     comment = models.CharField(max_length=512, verbose_name='comment', help_text='Comment', blank=True)
 
     def __str__(self):
-        return f'{self.start} | duration: {self.duration_lessons} | {self.day} | {self.user} | ' \
+        return f'{self.start} | duration: {self.duration} | {self.day} | {self.user} | ' \
                f'{self.get_subject_display()} | {self.comment}'
 
     class Meta:

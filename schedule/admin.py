@@ -1,19 +1,14 @@
 from django.contrib import admin
 from django.contrib.admin.widgets import AdminTimeWidget
-
+import datetime
 from .models import WorkDay, Lesson
 from django.contrib.admin.decorators import display
 from django import forms
-
-# Register your models here.
-admin.site.register(Lesson)
-import datetime
-
-from django.forms import SelectDateWidget
 from django.utils.dates import MONTHS
+admin.site.register(Lesson)
 
 
-class CustomSelectDateWidget(SelectDateWidget):
+class CustomSelectDateWidget(forms.SelectDateWidget):
 
     def init(self, attrs=None, years=None, months=None, empty_label=None):
         self.attrs = attrs or {}
@@ -50,6 +45,7 @@ class CustomSelectDateWidget(SelectDateWidget):
 
 class WorkDayAdminForm(forms.ModelForm):
     start = forms.TimeField(widget=AdminTimeWidget(format='%H:%M'))
+
     class Meta:
         model = WorkDay
         widgets = {
@@ -68,9 +64,8 @@ class WorkDayAdmin(admin.ModelAdmin):
 
     @display(description='Available time')
     def available_time(self, obj):
-        return obj.available_time()
+        return f'{", ".join([": ".join(list(map(str,interval))) for interval in obj.available_time()])}'
 
 
-# TODO cделать возврат читаемой эф строки с такого то время по такое 
 
 admin.site.register(WorkDay, WorkDayAdmin)
