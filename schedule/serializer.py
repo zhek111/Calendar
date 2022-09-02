@@ -11,11 +11,13 @@ class LessonSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Lesson
-        fields = ['id', 'subject', 'subject_di']
-
+        fields = ['user', 'id', 'day', 'start', 'subject', 'subject_di', 'duration_lessons', 'created_at', 'change_at',
+                  'comment']
+        read_only_fields = ['created_at', 'change_at']
 
 class WorkDaySerializer(serializers.ModelSerializer):
     available = serializers.BooleanField(read_only=True)
+
     class Meta:
         model = WorkDay
         fields = ['id', 'available', 'date', 'start', 'finish']

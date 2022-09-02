@@ -24,5 +24,5 @@ router.register(r'lessons', LessonViewSet)
 urlpatterns = [
     path('', include(router.urls)),
     path('workdays/', WorkDayViewSet.as_view({'post': 'create', 'get': 'list'})),
-    # path('lessons/', LessonViewSet.as_view({'post': 'create', 'get': 'list'})),
+    path('lessons/', LessonViewSet.as_view({'post': 'create', 'get': 'list'})),
 ]
