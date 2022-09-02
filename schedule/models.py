@@ -3,16 +3,27 @@ from itertools import chain
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.utils.timezone import now
 
 WORK_DAY_START = datetime.time(9, 00)
 WORK_DAY_FINISH = datetime.time(18, 00)
 BREAK_START = datetime.time(13, 00)
 BREAK_FINISH = datetime.time(14, 00)
-
+START_DAY = 0.0
+END_DAY = 24.0
 
 def is_half_hour_validator(value):
     if value.minute % 30 != 0 or value.second != 0:
-        raise ValidationError(message='Укажить время кратное 30 минутам')
+        raise ValidationError(message='The set time must be a multiple of 30 minutes.')
+
+
+def time_of_function(function):
+    def wrapper(*args, **kvargs):
+        startTime = datetime.datetime.now()
+        result = function(*args, **kvargs)
+        print("Used time:", datetime.datetime.now() - startTime)
+        return result
+    return wrapper
 
 
 def time_to_float(time):
@@ -28,13 +39,25 @@ def get_event_duration(start, stop):
     while result < stop:
         duration.append(result)
         result += 0.5
-    return duration
+    return set(duration)
 
+def get_time_interval(time):
+    intervals = []
+    for i, d in enumerate(time):
+        if time[i - 1] != d - 0.5:
+            start = d
+        if i + 1 < len(time):
+            if time[i + 1] != d + 0.5:
+                intervals.append((start, d + 0.5))
+        if i + 1 >= len(time):
+            intervals.append((start, d + 0.5))
+    return intervals
+    
 
 class WorkDay(models.Model):
     available = models.BooleanField(default=True, verbose_name='availability',
                                     help_text='Writable')
-    date = models.DateField(default=datetime.date.today(), verbose_name='date', help_text='Set the date', unique=True)
+    date = models.DateField(default=now, verbose_name='date', help_text='Set the date', unique=True)
     # TODO прописать дату на годы вперед
     start = models.TimeField(default=WORK_DAY_START, verbose_name='start',
                              help_text='Set the beginning of the work day', validators=[is_half_hour_validator])
@@ -65,40 +88,27 @@ class WorkDay(models.Model):
             errors.append('Invalid time, finish of a break in non-working hours')
         if errors:
             raise ValidationError(message=errors)
-
-    # TODO прочитать по values и values list, сделать авиабл тайм (ниже пояснения)
-
+#TODO оптимизировать авифбле тайм
+#TODO метод клин, перерывы, их уникальность и наличие, чтобы не было ошибок. 
+    @time_of_function
     def available_time(self):
-        start = time_to_float(self.start)
-        start_break = time_to_float(self.start_break_time)
-        finish = time_to_float(self.finish)
-        finist_break = time_to_float(self.finish_break_time)
-        duration_night = list(map(get_event_duration, (0.0, finish), (start, 24.0)))
-        duration_night = list(chain(*duration_night))
-        duration_break = get_event_duration(start_break, finist_break)
-        lessons = self.lessons.all().order_by('start')
-        start_lessons = []
-        finish_lessons = []
-        for lesson in lessons:
-            start_lessons.append(time_to_float(lesson.start))
-            finish_lessons.append(time_to_float(lesson.start) + time_to_float(lesson.duration_lessons))
-        duration_lessons = list(map(get_event_duration, start_lessons, finish_lessons))
-        duration_lessons = list(chain(*duration_lessons))
-        all_hours = list(range(0, 24))
-        all_time = list(map(lambda x: [x, x + 0.5], all_hours))
-        all_time = set(chain(*all_time))
-        busy_time = set(duration_break + duration_lessons + duration_night)
-        free_time = sorted(list(all_time - busy_time))
-        list_free_time = []
-        for i, d in enumerate(free_time):
-            if free_time[i - 1] != d - 0.5:
-                start = d
-            if i + 1 < len(free_time):
-                if free_time[i + 1] != d + 0.5:
-                    list_free_time.append((start, d + 0.5))
-            if i + 1 >= len(free_time):
-                list_free_time.append((start, d + 0.5))
-        return list_free_time
+        if not self.available:
+            return ()
+        duration_day = get_event_duration(time_to_float(self.start), time_to_float(self.finish))
+        if self.start_break_time:
+            duration_break = get_event_duration(time_to_float(self.start_break_time), time_to_float(self.finish_break_time))
+        if self.lessons.count() > 0:
+            lessons = self.lessons.all()
+            start_lessons = [time_to_float(lesson.start) for lesson in lessons]
+            finish_lessons = [time_to_float(lesson.start) + time_to_float(lesson.duration_lessons) for lesson in lessons]
+            duration_lessons = list(map(get_event_duration, start_lessons, finish_lessons))
+            duration_lessons = set(chain(*duration_lessons))
+        if not duration_lessons:
+            duration_lessons = set()
+        if not duration_break:
+            duration_break = set()
+        free_time = sorted(list(duration_day - duration_lessons - duration_break))
+        return get_time_interval(free_time)
 
     class Meta:
         db_table = 'Days'
@@ -135,6 +145,7 @@ class Lesson(models.Model):
 
     duration_lessons = models.TimeField(choices=TIME_CHOISES, default=HOUR,
                                         verbose_name='lesson duration', help_text='select lesson duration')
+    #TODO переделать на просто дюрейшн, без лесонС
     created_at = models.DateTimeField(auto_now_add=True)
     change_at = models.DateTimeField(auto_now=True)
     comment = models.CharField(max_length=512, verbose_name='comment', help_text='Comment', blank=True)
@@ -150,6 +161,4 @@ class Lesson(models.Model):
         unique_together = ['day', 'start']
         ordering = ['day', 'start']
 
-# TODO может быть добавить place = дома, работа, онлайн. чойзес. Или перегруз, пофик? TODO определить класс мета 
-#  везде подробно и создать базу и миграции заново (не работает, мб где то не так зарегистрированы таблицы, 
-#  т.к у них новые имена)
+# TODO может быть добавить place = дома, работа, онлайн. чойзес. Или перегруз, пофик?
