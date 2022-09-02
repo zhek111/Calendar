@@ -9,8 +9,7 @@ WORK_DAY_START = datetime.time(9, 00)
 WORK_DAY_FINISH = datetime.time(18, 00)
 BREAK_START = datetime.time(13, 00)
 BREAK_FINISH = datetime.time(14, 00)
-START_DAY = 0.0
-END_DAY = 24.0
+
 
 def is_half_hour_validator(value):
     if value.minute % 30 != 0 or value.second != 0:
@@ -64,11 +63,11 @@ class WorkDay(models.Model):
     finish = models.TimeField(default=WORK_DAY_FINISH, verbose_name='end',
                               help_text='Set the end of the working day', validators=[is_half_hour_validator])
 
-    start_break_time = models.TimeField(default=BREAK_START, null=True, verbose_name='start break'
+    start_break_time = models.TimeField(default=BREAK_START, blank=True, verbose_name='start break'
                                         , help_text='select the start time of the break,'
                                                     ' or leave the field blank if there is none',
                                         validators=[is_half_hour_validator])
-    finish_break_time = models.TimeField(default=BREAK_FINISH, null=True, verbose_name='finish break'
+    finish_break_time = models.TimeField(default=BREAK_FINISH, blank=True, verbose_name='finish break'
                                          , help_text='select the finish time of the break,'
                                                      ' or leave the field blank if there is none',
                                          validators=[is_half_hour_validator])
@@ -80,33 +79,36 @@ class WorkDay(models.Model):
         errors = []
         if self.start >= self.finish:
             errors.append('Invalid time, start after finish')
-        if self.start_break_time >= self.finish_break_time:
-            errors.append('Invalid time, start break after finish')
-        if not self.start < self.start_break_time < self.finish:
-            errors.append('Invalid time, start of a break in non-working hours')
-        if not self.start < self.finish_break_time < self.finish:
-            errors.append('Invalid time, finish of a break in non-working hours')
+        if self.start_break_time and not self.finish_break_time:
+            errors.append('Invalid break, set finish break')
+        if self.finish_break_time and not self.start_break_time:
+            errors.append('Invalid break, set start break')
+        if self.start_break_time and self.finish_break_time:
+            if self.start_break_time >= self.finish_break_time:
+                errors.append('Invalid time, start break after finish')
+            if not self.start < self.start_break_time < self.finish:
+                errors.append('Invalid time, start of a break in non-working hours')
+            if not self.start < self.finish_break_time < self.finish:
+                errors.append('Invalid time, finish of a break in non-working hours')
         if errors:
             raise ValidationError(message=errors)
-#TODO оптимизировать авифбле тайм
+
 #TODO метод клин, перерывы, их уникальность и наличие, чтобы не было ошибок. 
     @time_of_function
     def available_time(self):
         if not self.available:
             return ()
         duration_day = get_event_duration(time_to_float(self.start), time_to_float(self.finish))
+        duration_break = set()
         if self.start_break_time:
             duration_break = get_event_duration(time_to_float(self.start_break_time), time_to_float(self.finish_break_time))
+        duration_lessons = set()
         if self.lessons.count() > 0:
             lessons = self.lessons.all()
             start_lessons = [time_to_float(lesson.start) for lesson in lessons]
             finish_lessons = [time_to_float(lesson.start) + time_to_float(lesson.duration_lessons) for lesson in lessons]
             duration_lessons = list(map(get_event_duration, start_lessons, finish_lessons))
             duration_lessons = set(chain(*duration_lessons))
-        if not duration_lessons:
-            duration_lessons = set()
-        if not duration_break:
-            duration_break = set()
         free_time = sorted(list(duration_day - duration_lessons - duration_break))
         return get_time_interval(free_time)
 
