@@ -105,10 +105,12 @@ class WorkDay(models.Model):
             duration_break = get_event_duration(time_to_float(self.start_break_time),
                                                 time_to_float(self.finish_break_time))
         duration_lessons = set()
-        if self.lessons.count() > 0:
-            lessons = self.lessons.all()
-            start_lessons = [time_to_float(lesson.start) for lesson in lessons]
-            finish_lessons = [time_to_float(lesson.start) + time_to_float(lesson.duration) for lesson in lessons]
+        lessons = self.lessons.all()
+        if lessons.exists():
+            start_lessons, finish_lessons = list(), list()
+            for lesson in lessons:
+                start_lessons.append(time_to_float(lesson.start))
+                finish_lessons.append(time_to_float(lesson.start) + time_to_float(lesson.duration))
             duration_lessons = list(map(get_event_duration, start_lessons, finish_lessons))
             duration_lessons = set(chain(*duration_lessons))
         free_time = sorted(list(duration_day - duration_lessons - duration_break))

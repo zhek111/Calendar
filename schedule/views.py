@@ -17,7 +17,10 @@ class LessonViewSet(viewsets.ModelViewSet):
         user = user_model.objects.first()
         request.data["user"] = user.id
         return super(LessonViewSet, self).create(request, *args, **kwargs)
-            
+    def get_serializer(self, *args, **kwargs):
+        if self.action == "retrieve":
+            return LessonSerializer
+        return LessonSerializer
 
 class WorkDayViewSet(viewsets.ViewSet):
     permission_classes = []
@@ -32,5 +35,5 @@ class WorkDayViewSet(viewsets.ViewSet):
 
     def list(self, request):
         workdays = WorkDay.objects.all()
-        s = self.serializer_class(workdays,many=True)
-        return Response(data=s.data, status=HTTP_200_OK)
+        serialalizer = self.serializer_class(instance=workdays,many=True)
+        return Response(data=serialalizer.data, status=HTTP_200_OK)
