@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin.widgets import AdminTimeWidget
 import datetime
-from .models import WorkDay, Lesson
+from .models import WorkDay, Lesson, get_time_interval
 from django.contrib.admin.decorators import display
 from django import forms
 from django.utils.dates import MONTHS
@@ -64,7 +64,7 @@ class WorkDayAdmin(admin.ModelAdmin):
 
     @display(description='Available time')
     def available_time(self, obj):
-        return f'{", ".join([": ".join(list(map(str,interval))) for interval in obj.available_time()])}'
+        return f'{", ".join([": ".join(list(map(str,interval))) for interval in get_time_interval(obj.available_time())])}'
 
 
 

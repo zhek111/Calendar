@@ -114,8 +114,9 @@ class WorkDay(models.Model):
             duration_lessons = list(map(get_event_duration, start_lessons, finish_lessons))
             duration_lessons = set(chain(*duration_lessons))
         free_time = sorted(list(duration_day - duration_lessons - duration_break))
-        return get_time_interval(free_time)
+        return free_time
 
+    # TODO сделать метод проверки входящих данных(что время для урока свободно) методы тертив, апдейт в вьюшку
     class Meta:
         db_table = 'Days'
         ordering = ['date']
@@ -159,11 +160,15 @@ class Lesson(models.Model):
         return f'{self.start} | duration: {self.duration} | {self.day} | {self.user} | ' \
                f'{self.get_subject_display()} | {self.comment}'
 
-    class Meta:
-        db_table = 'Lessons'
-        verbose_name = 'Lesson'
-        verbose_name_plural = 'Lessons'
-        unique_together = ['day', 'start']
-        ordering = ['day', 'start']
+    def is_avaiable_time(self):
+        time_lesson = get_event_duration(time_to_float(self.start), (time_to_float(self.start) + time_to_float(self.duration)))
+        return time_lesson in WorkDay.available_time
+
+        class Meta:
+            db_table = 'Lessons'
+            verbose_name = 'Lesson'
+            verbose_name_plural = 'Lessons'
+            unique_together = ['day', 'start']
+            ordering = ['day', 'start']
 
 # TODO может быть добавить place = дома, работа, онлайн. чойзес. Или перегруз, пофик?
