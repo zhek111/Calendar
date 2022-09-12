@@ -4,6 +4,7 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils.timezone import now
+from typing import Union
 
 WORK_DAY_START = datetime.time(9, 00)
 WORK_DAY_FINISH = datetime.time(18, 00)
@@ -26,14 +27,14 @@ def time_of_function(function):
     return wrapper
 
 
-def time_to_float(time):
+def time_to_float(time: datetime.time) -> float:
     float_value = float(time.strftime("%H"))
     if time.strftime("%M") == "30":
         float_value += 0.5
     return float_value
 
 
-def get_event_duration(start, stop):
+def get_event_duration(start: float, stop: float) -> set:
     duration = []
     result = start
     while result < stop:
@@ -42,7 +43,7 @@ def get_event_duration(start, stop):
     return set(duration)
 
 
-def get_time_interval(time):
+def get_time_interval(time: list) -> list[tuple]:
     intervals = []
     for i, d in enumerate(time):
         if time[i - 1] != d - 0.5:
@@ -95,10 +96,10 @@ class WorkDay(models.Model):
         if errors:
             raise ValidationError(message=errors)
 
-    @time_of_function
-    def available_time(self):
+    # @time_of_function
+    def available_time(self) -> list:
         if not self.available:
-            return ()
+            return []
         duration_day = get_event_duration(time_to_float(self.start), time_to_float(self.finish))
         duration_break = set()
         if self.start_break_time:
@@ -160,15 +161,20 @@ class Lesson(models.Model):
         return f'{self.start} | duration: {self.duration} | {self.day} | {self.user} | ' \
                f'{self.get_subject_display()} | {self.comment}'
 
-    def is_avaiable_time(self):
-        time_lesson = get_event_duration(time_to_float(self.start), (time_to_float(self.start) + time_to_float(self.duration)))
-        return time_lesson in WorkDay.available_time
+    @staticmethod
+    def is_avaiable_time(start, duration, day) -> bool:
+        if start and duration and day:
+            time_lesson = get_event_duration(time_to_float(start),
+                                         (time_to_float(start) + time_to_float(duration)))
+            free_time = set(day.available_time())
+            return time_lesson < free_time
+        return False
 
-        class Meta:
-            db_table = 'Lessons'
-            verbose_name = 'Lesson'
-            verbose_name_plural = 'Lessons'
-            unique_together = ['day', 'start']
-            ordering = ['day', 'start']
+    class Meta:
+        db_table = 'Lessons'
+        verbose_name = 'Lesson'
+        verbose_name_plural = 'Lessons'
+        unique_together = ['day', 'start']
+        ordering = ['day', 'start']
 
 # TODO может быть добавить place = дома, работа, онлайн. чойзес. Или перегруз, пофик?
