@@ -13,13 +13,11 @@ from django.conf import settings
 class LessonViewSet(viewsets.ModelViewSet):
     permission_classes = []
     queryset = Lesson.objects.all()
-
+    serializer = LessonSerializer
     def get_serializer(self, *args, **kwargs):
         if self.action == "partial_update":
             return LessonPatchSerializer
         return LessonSerializer
-
-    serializer_class = get_serializer
 
     def create(self, request, *args, **kwargs):
         # user = request.user
@@ -38,6 +36,7 @@ class LessonViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data='Impossible delete')
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
@@ -58,7 +57,6 @@ class LessonViewSet(viewsets.ModelViewSet):
     def partial_update(self, request, *args, **kwargs):
         kwargs['partial'] = True
         return self.update(request, *args, **kwargs)
-
 
 
 class WorkDayViewSet(viewsets.ViewSet):
