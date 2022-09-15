@@ -13,12 +13,13 @@ from django.conf import settings
 class LessonViewSet(viewsets.ModelViewSet):
     permission_classes = []
     queryset = Lesson.objects.all()
-    serializer_class = LessonSerializer
 
     def get_serializer(self, *args, **kwargs):
         if self.action == "partial_update":
             return LessonPatchSerializer
         return LessonSerializer
+
+    serializer_class = get_serializer
 
     def create(self, request, *args, **kwargs):
         # user = request.user
@@ -37,14 +38,27 @@ class LessonViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data='Impossible delete')
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+    def perform_update(self, serializer):
+        serializer.save()
 
     def partial_update(self, request, *args, **kwargs):
-        queryset = Lesson.objects.all()
-        serializer = self.get_serializer(isinstance=queryset, data=request.data, partial=True)
-        return Response(serializer.data)
-    # def update(self, request, *args, **kwargs):
-    #     serializer = self.get_serializer(data=request.data)
-    #     return self.update(request, *args, **kwargs)
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
+
 
 
 class WorkDayViewSet(viewsets.ViewSet):

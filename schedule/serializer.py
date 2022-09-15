@@ -8,7 +8,7 @@ class UserForLessonSerializer(serializers.ModelSerializer):
     class Meta:
         model = get_user_model()
         fields = ['username', 'first_name', 'last_name']
-        read_only_fiels = ['username', 'first_name', 'last_name']
+        read_only_fields = ['username', 'first_name', 'last_name']
 
 
 class LessonPatchSerializer(serializers.ModelSerializer):
