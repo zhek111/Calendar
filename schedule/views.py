@@ -37,7 +37,13 @@ class LessonViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data='Impossible delete')
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
-
+    def partial_update(self, request, *args, **kwargs):
+        queryset = Lesson.objects.all()
+        serializer = self.get_serializer(isinstance=queryset, data=request.data,partial=True)
+        return Response(serializer.data)
+    # def update(self, request, *args, **kwargs):
+    #     serializer = self.get_serializer(data=request.data)
+    #     return self.update(request, *args, **kwargs)
 
 class WorkDayViewSet(viewsets.ViewSet):
     permission_classes = []
