@@ -6,6 +6,8 @@ from django.core.exceptions import ValidationError
 from django.utils.timezone import now
 from typing import Union
 
+from Calendar.settings import DIFFERENCE
+
 WORK_DAY_START = datetime.time(9, 00)
 WORK_DAY_FINISH = datetime.time(18, 00)
 BREAK_START = datetime.time(13, 00)
@@ -117,7 +119,7 @@ class WorkDay(models.Model):
         free_time = sorted(list(duration_day - duration_lessons - duration_break))
         return free_time
 
-    # TODO сделать метод проверки входящих данных(что время для урока свободно) методы тертив, апдейт в вьюшку
+
     class Meta:
         db_table = 'Days'
         ordering = ['date']
@@ -165,10 +167,19 @@ class Lesson(models.Model):
     def is_avaiable_time(start, duration, day) -> bool:
         if start and duration and day:
             time_lesson = get_event_duration(time_to_float(start),
-                                         (time_to_float(start) + time_to_float(duration)))
+                                             (time_to_float(start) + time_to_float(duration)))
             free_time = set(day.available_time())
             return time_lesson < free_time
         return False
+
+    def can_be_delete(self, difference: int=DIFFERENCE) -> bool:
+        day = self.day.date
+        time_ = self.start
+        lesson_start = datetime.datetime(year=day.year, month=day.month, day=day.day, hour=time_.hour,
+                                         minute=time_.minute)
+        if lesson_start < datetime.datetime.now() + datetime.timedelta(hours=DIFFERENCE):
+            return False
+        return True
 
     class Meta:
         db_table = 'Lessons'

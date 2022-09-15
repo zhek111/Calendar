@@ -15,6 +15,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+
+
 from schedule.views import LessonViewSet, WorkDayViewSet
 from rest_framework import routers
 
@@ -26,4 +28,5 @@ urlpatterns = [
     path('workdays/', WorkDayViewSet.as_view({'post': 'create', 'get': 'list'})),
     path('workdays/<int:id>/', WorkDayViewSet.as_view({'post': 'updade', 'get': 'list'})),
     path('lessons/', LessonViewSet.as_view({'post': 'create', 'get': 'list'})),
+    path('lessons/<int:id>/', LessonViewSet.as_view({'post': 'updade', 'get': 'list'})),
 ]
