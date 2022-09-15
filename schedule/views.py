@@ -15,12 +15,17 @@ class LessonViewSet(viewsets.ModelViewSet):
     queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
 
+    def get_serializer(self, *args, **kwargs):
+        if self.action == "partial_update":
+            return LessonPatchSerializer
+        return LessonSerializer
+
     def create(self, request, *args, **kwargs):
         # user = request.user
         user_model = get_user_model()
         user = user_model.objects.first()
         request.data["user"] = user.id
-        serializer = LessonSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
@@ -32,15 +37,6 @@ class LessonViewSet(viewsets.ModelViewSet):
             return Response(status=status.HTTP_400_BAD_REQUEST, data='Impossible delete')
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-# TODO создать лессонпатчсериаалайзер, разрещить менять только комментарии, 
-#  остальные поля на чтение, сделать маршрутизацию в метоеде гет сериалайзер
-
-def get_serializer(self, *args, **kwargs):
-    if self.action == "retrieve":
-        return LessonPatchSerializer
-    return LessonSerializer
 
 
 class WorkDayViewSet(viewsets.ViewSet):
