@@ -24,10 +24,10 @@ router.register(r'lessons', LessonViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('workdays/', WorkDayViewSet.as_view({'post': 'create', 'get': 'list'})),
-    path('workdays/<int:id>/', WorkDayViewSet.as_view({'post': 'updade', 'get': 'list'})),
+    path('workdays/', WorkDayViewSet.as_view({'get': 'list'})),
+    path('workdays/<slug:workday_slug>/', WorkDayViewSet.as_view({'get': 'retrieve'})), 
     path('lessons/', LessonViewSet.as_view({'post': 'create', 'get': 'list'})),
-    path('lessons/<int:id>/', LessonViewSet.as_view({
+    path('lessons/<int:lesson_id>/', LessonViewSet.as_view({
         'get': 'retrieve',
         'put': 'update',
         'patch': 'partial_update',

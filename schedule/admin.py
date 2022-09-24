@@ -57,6 +57,7 @@ class WorkDayAdminForm(forms.ModelForm):
 class WorkDayAdmin(admin.ModelAdmin):
     list_display = ('date', 'available', 'lessons_amount', 'available_time')
     forms = WorkDayAdminForm
+    readonly_fields = ('slug',)
 
     @display(description='lessons amount')
     def lessons_amount(self, obj):

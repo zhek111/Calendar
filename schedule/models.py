@@ -76,9 +76,19 @@ class WorkDay(models.Model):
                                          , help_text='select the finish time of the break,'
                                                      ' or leave the field blank if there is none',
                                          validators=[is_half_hour_validator])
+    slug = models.SlugField(unique=True, verbose_name='Name of day')
 
     def __str__(self):
         return self.date.strftime("%A %d %B %Y")
+
+    def generate_slug(self):
+        return self.date.strftime("%d-%m-%y")
+    def save(
+            self, force_insert=False, force_update=False, using=None, update_fields=None
+    ):
+        self.slug = self.generate_slug()
+        super(WorkDay, self).save(force_insert=force_insert, force_update=force_update, using=using,
+                                  update_fields=update_fields)
 
     def clean(self):
         errors = []
@@ -99,7 +109,7 @@ class WorkDay(models.Model):
             raise ValidationError(message=errors)
 
     # @time_of_function
-    def available_time(self) -> list:
+    def available_time(self, lesson_start=None) -> list:
         if not self.available:
             return []
         duration_day = get_event_duration(time_to_float(self.start), time_to_float(self.finish))
@@ -109,6 +119,8 @@ class WorkDay(models.Model):
                                                 time_to_float(self.finish_break_time))
         duration_lessons = set()
         lessons = self.lessons.all()
+        if lesson_start:
+            lessons = lessons.exclude(start=lesson_start)
         if lessons.exists():
             start_lessons, finish_lessons = list(), list()
             for lesson in lessons:
@@ -118,7 +130,6 @@ class WorkDay(models.Model):
             duration_lessons = set(chain(*duration_lessons))
         free_time = sorted(list(duration_day - duration_lessons - duration_break))
         return free_time
-
 
     class Meta:
         db_table = 'Days'
@@ -168,11 +179,11 @@ class Lesson(models.Model):
         if start and duration and day:
             time_lesson = get_event_duration(time_to_float(start),
                                              (time_to_float(start) + time_to_float(duration)))
-            free_time = set(day.available_time())
+            free_time = set(day.available_time(lesson_start=start))
             return time_lesson < free_time
         return False
 
-    def can_be_delete(self, difference: int=DIFFERENCE) -> bool:
+    def can_be_delete(self, difference: int = DIFFERENCE) -> bool:
         day = self.day.date
         time_ = self.start
         lesson_start = datetime.datetime(year=day.year, month=day.month, day=day.day, hour=time_.hour,
