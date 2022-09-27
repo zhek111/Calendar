@@ -63,6 +63,8 @@ class WorkDay(models.Model):
                                     help_text='Writable')
     date = models.DateField(default=now, verbose_name='date', help_text='Set the date', unique=True)
     # TODO прописать дату на годы вперед
+    # TODO создать менеджемент команду, которая принимает в параметрах год и создает на этот год воркдеи
+    # TODO прочить про bulkcreate, применить к штуке выше
     start = models.TimeField(default=WORK_DAY_START, verbose_name='start',
                              help_text='Set the beginning of the work day', validators=[is_half_hour_validator])
     finish = models.TimeField(default=WORK_DAY_FINISH, verbose_name='end',
@@ -199,4 +201,18 @@ class Lesson(models.Model):
         unique_together = ['day', 'start']
         ordering = ['day', 'start']
 
-# TODO может быть добавить place = дома, работа, онлайн. чойзес. Или перегруз, пофик?
+
+# def foo(year):
+#     bar = range(datetime.date(year, 1, 1), datetime.date(year, 12, 31))
+#     data = {
+#         'available': True
+#         'start': 
+#     }
+#     for d in bar:
+#         if d != выходной
+#         WorkDay.objects.create(date=d, **data)
+# 
+# import pandas as pd
+# import datetime
+# 
+# datelist = pd.bdate_range(datetime.date(2022, 1, 1), periods=365).to_pydatetime().tolist()
