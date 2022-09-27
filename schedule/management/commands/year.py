@@ -17,8 +17,12 @@ def create_days(year):
         'start_break_time': datetime.time(13, 00),
         'finish_break_time': datetime.time(14, 00)
     }
-    for days in date_list:
-        WorkDay.objects.create(date=days, **data)
+    days_list = []
+    for day in date_list:
+        data['date'] = day
+        data['slug'] = data['date'].strftime("%d-%m-%y")
+        days_list.append(WorkDay(**data))
+    WorkDay.objects.bulk_create(days_list)
 
 
 class Command(BaseCommand):
