@@ -5,7 +5,7 @@ from .models import WorkDay, Lesson, get_time_interval
 from django.contrib.admin.decorators import display
 from django import forms
 from django.utils.dates import MONTHS
-admin.site.register(Lesson)
+
 
 
 class CustomSelectDateWidget(forms.SelectDateWidget):
@@ -52,7 +52,9 @@ class WorkDayAdminForm(forms.ModelForm):
             'date': CustomSelectDateWidget
         }
         fields = '__all__'
-
+class LessonAdmin(admin.ModelAdmin):
+    search_fields = ('day', )
+    autocomplete_fields = ('day', )
 
 class WorkDayAdmin(admin.ModelAdmin):
     list_display = ('date', 'available', 'lessons_amount', 'available_time')
@@ -70,3 +72,5 @@ class WorkDayAdmin(admin.ModelAdmin):
 
 
 admin.site.register(WorkDay, WorkDayAdmin)
+admin.site.register(Lesson, LessonAdmin)
+# TODO скопировать код из телеграмма и разобраться в чем у меня отличие (должен зарабоать виджет) 

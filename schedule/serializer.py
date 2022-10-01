@@ -84,3 +84,6 @@ class WorkDayRetrieveSerializer(serializers.ModelSerializer):
         model = WorkDay
         fields = ['slug', 'id', 'available', 'date', 'start', 'finish', 'start_break_time',
                   'finish_break_time', 'lessons']
+
+#TODO При получение одного урока я должен получить список доступных(из трех штук) предметов для записи(изменения) 
+# TODO вывести такой же масив который мы получили из get_subjects во views. Надо сделать класс метод

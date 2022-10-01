@@ -9,6 +9,9 @@ from schedule.models import Lesson, WorkDay
 from schedule.serializer import LessonSerializer, WorkDaySerializer, LessonPatchSerializer, WorkDayRetrieveSerializer
 from django.conf import settings
 from rest_framework.exceptions import NotFound
+from rest_framework.decorators import api_view, throttle_classes, permission_classes
+from rest_framework.throttling import UserRateThrottle
+from django.db.models.functions import Cast, ExtractYear
 
 
 class LessonViewSet(viewsets.ModelViewSet):
@@ -39,6 +42,11 @@ class LessonViewSet(viewsets.ModelViewSet):
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
 
+    def retrieve(self, request, *args, **kwargs):
+        response = super(LessonViewSet, self).list(self, request, *args, **kwargs)
+        response.data['subjects'] = Lesson.all_choises()
+        return response
+
 
 class WorkDayViewSet(viewsets.ViewSet):
     permission_classes = []
@@ -62,11 +70,14 @@ class WorkDayViewSet(viewsets.ViewSet):
     def list(self, request):
         workdays = WorkDay.objects.all().annotate(
             lessons_ex=Exists(Lesson.objects.filter(day_id=OuterRef('pk'))),
-            year_of_workday=Value(F('date'), output_field=CharField())
+            year_of_workday=ExtractYear('date')
         )
         serializer = self.serializer_class(instance=workdays, many=True)
         return Response(data=serializer.data, status=HTTP_200_OK)
 
-    def update(self, request):
-        serializer = WorkDaySerializer(data=request.data)
-        pass
+
+@api_view(['GET'])
+@permission_classes([])
+def get_subjects(request):
+    data = Lesson.all_choises()
+    return Response(data=data, status=HTTP_200_OK)

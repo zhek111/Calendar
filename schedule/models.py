@@ -62,9 +62,6 @@ class WorkDay(models.Model):
     available = models.BooleanField(default=True, verbose_name='availability',
                                     help_text='Writable')
     date = models.DateField(default=now, verbose_name='date', help_text='Set the date', unique=True)
-    # TODO прописать дату на годы вперед
-    # TODO создать менеджемент команду, которая принимает в параметрах год и создает на этот год воркдеи
-    # TODO прочить про bulkcreate, применить к штуке выше
     start = models.TimeField(default=WORK_DAY_START, verbose_name='start',
                              help_text='Set the beginning of the work day', validators=[is_half_hour_validator])
     finish = models.TimeField(default=WORK_DAY_FINISH, verbose_name='end',
@@ -83,12 +80,14 @@ class WorkDay(models.Model):
     def __str__(self):
         return self.date.strftime("%A %d %B %Y")
 
-    def generate_slug(self):
-        return self.date.strftime("%d-%m-%y")
+    @staticmethod
+    def generate_slug(date: datetime.date) -> str:
+        return date.strftime("%d-%m-%y")
+
     def save(
             self, force_insert=False, force_update=False, using=None, update_fields=None
     ):
-        self.slug = self.generate_slug()
+        self.slug = self.generate_slug(self.date)
         super(WorkDay, self).save(force_insert=force_insert, force_update=force_update, using=using,
                                   update_fields=update_fields)
 
@@ -194,13 +193,17 @@ class Lesson(models.Model):
             return False
         return True
 
+    @classmethod
+    def all_choises(cls):
+        subjects = [{'code': subject[0], 'name': subject[1]} for subject in cls.SUBJECT_CHOISES]
+        return subjects
+
     class Meta:
         db_table = 'Lessons'
         verbose_name = 'Lesson'
         verbose_name_plural = 'Lessons'
         unique_together = ['day', 'start']
         ordering = ['day', 'start']
-
 
 # def foo(year):
 #     bar = range(datetime.date(year, 1, 1), datetime.date(year, 12, 31))
