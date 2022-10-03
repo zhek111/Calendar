@@ -6,9 +6,18 @@ from django.contrib.admin.decorators import display
 from django import forms
 from django.utils.dates import MONTHS
 
+import datetime
+
+from django.forms import SelectDateWidget
+from django.utils.dates import MONTHS
+
+import datetime
+
+from django.forms import SelectDateWidget
+from django.utils.dates import MONTHS
 
 
-class CustomSelectDateWidget(forms.SelectDateWidget):
+class CustomSelectDateWidget(SelectDateWidget):
 
     def init(self, attrs=None, years=None, months=None, empty_label=None):
         self.attrs = attrs or {}
@@ -18,7 +27,7 @@ class CustomSelectDateWidget(forms.SelectDateWidget):
             self.years = years
         else:
             this_year = datetime.date.today().year
-            self.years = range(this_year, this_year + 5)
+            self.years = range(this_year - 100, this_year + 20)
 
         # Optional dict of months to use in the "month" select box.
         if months:
@@ -42,7 +51,6 @@ class CustomSelectDateWidget(forms.SelectDateWidget):
             self.month_none_value = self.none_value
             self.day_none_value = self.none_value
 
-
 class WorkDayAdminForm(forms.ModelForm):
     start = forms.TimeField(widget=AdminTimeWidget(format='%H:%M'))
 
@@ -52,14 +60,17 @@ class WorkDayAdminForm(forms.ModelForm):
             'date': CustomSelectDateWidget
         }
         fields = '__all__'
+
+
 class LessonAdmin(admin.ModelAdmin):
-    search_fields = ('day', )
-    autocomplete_fields = ('day', )
+    autocomplete_fields = ('day',)
+
 
 class WorkDayAdmin(admin.ModelAdmin):
     list_display = ('date', 'available', 'lessons_amount', 'available_time')
     forms = WorkDayAdminForm
     readonly_fields = ('slug',)
+    search_fields = ('slug',)
 
     @display(description='lessons amount')
     def lessons_amount(self, obj):
@@ -67,10 +78,9 @@ class WorkDayAdmin(admin.ModelAdmin):
 
     @display(description='Available time')
     def available_time(self, obj):
-        return f'{", ".join([": ".join(list(map(str,interval))) for interval in get_time_interval(obj.available_time())])}'
-
+        return f'{", ".join([": ".join(list(map(str, interval))) for interval in get_time_interval(obj.available_time())])}'
 
 
 admin.site.register(WorkDay, WorkDayAdmin)
 admin.site.register(Lesson, LessonAdmin)
-# TODO скопировать код из телеграмма и разобраться в чем у меня отличие (должен зарабоать виджет) 
+# TODO скопировать код из телеграмма и разобраться в чем у меня отличие (должен зарабоать виджет)

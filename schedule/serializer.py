@@ -59,13 +59,6 @@ class LessonSerializer(serializers.ModelSerializer):
         fields = ['user', 'id', 'day', 'start', 'subject', 'subject_di', 'duration', 'created_at', 'change_at',
                   'comment', 'user_data', 'day_data', 'work_day_date']
         read_only_fields = ['created_at', 'change_at']
-        # TODO разобраться, почему depth =1 не возращает attr, и как это обойти(метотд create Postman)
-        # depth = 1
-        # extra_kwargs = {
-        #     'user': {
-        #         'write_only': True    
-        #     }
-        # }
 
 
 class WorkDaySerializer(serializers.ModelSerializer):
@@ -85,5 +78,3 @@ class WorkDayRetrieveSerializer(serializers.ModelSerializer):
         fields = ['slug', 'id', 'available', 'date', 'start', 'finish', 'start_break_time',
                   'finish_break_time', 'lessons']
 
-#TODO При получение одного урока я должен получить список доступных(из трех штук) предметов для записи(изменения) 
-# TODO вывести такой же масив который мы получили из get_subjects во views. Надо сделать класс метод

@@ -219,3 +219,8 @@ class Lesson(models.Model):
 # import datetime
 # 
 # datelist = pd.bdate_range(datetime.date(2022, 1, 1), periods=365).to_pydatetime().tolist()
+
+#TODO  полностью убрать комментарии(кроме подсказок), тудушки, закомментированные части. 
+# TODO залить в ветку девелопмент
+# TODO добавить в разработчики по почте
+# TODO сделать пулреквест в ветку мейн
