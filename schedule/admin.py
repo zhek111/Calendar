@@ -1,15 +1,8 @@
 from django.contrib import admin
 from django.contrib.admin.widgets import AdminTimeWidget
-import datetime
 from .models import WorkDay, Lesson, get_time_interval
 from django.contrib.admin.decorators import display
 from django import forms
-from django.utils.dates import MONTHS
-
-import datetime
-
-from django.forms import SelectDateWidget
-from django.utils.dates import MONTHS
 
 import datetime
 
@@ -51,8 +44,9 @@ class CustomSelectDateWidget(SelectDateWidget):
             self.month_none_value = self.none_value
             self.day_none_value = self.none_value
 
+
 class WorkDayAdminForm(forms.ModelForm):
-    start = forms.TimeField(widget=AdminTimeWidget(format='%H:%M'))
+    # start = forms.TimeField(widget=AdminTimeWidget(format='%H:%M'))
 
     class Meta:
         model = WorkDay
@@ -83,4 +77,3 @@ class WorkDayAdmin(admin.ModelAdmin):
 
 admin.site.register(WorkDay, WorkDayAdmin)
 admin.site.register(Lesson, LessonAdmin)
-# TODO скопировать код из телеграмма и разобраться в чем у меня отличие (должен зарабоать виджет)

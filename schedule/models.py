@@ -4,8 +4,6 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.utils.timezone import now
-from typing import Union
-
 from Calendar.settings import DIFFERENCE
 
 WORK_DAY_START = datetime.time(9, 00)
@@ -220,7 +218,7 @@ class Lesson(models.Model):
 # 
 # datelist = pd.bdate_range(datetime.date(2022, 1, 1), periods=365).to_pydatetime().tolist()
 
-#TODO  полностью убрать комментарии(кроме подсказок), тудушки, закомментированные части. 
+# TODO  полностью убрать комментарии(кроме подсказок), тудушки, закомментированные части. 
 # TODO залить в ветку девелопмент
 # TODO добавить в разработчики по почте
 # TODO сделать пулреквест в ветку мейн
