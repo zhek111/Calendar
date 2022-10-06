@@ -192,8 +192,3 @@ class Lesson(models.Model):
         verbose_name_plural = 'Lessons'
         unique_together = ['day', 'start']
         ordering = ['day', 'start']
-
-
-# TODO залить в ветку девелопмент
-# TODO добавить в разработчики по почте
-# TODO сделать пулреквест в ветку мейн
