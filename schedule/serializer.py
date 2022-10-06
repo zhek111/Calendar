@@ -25,7 +25,7 @@ class LessonPatchSerializer(serializers.ModelSerializer):
                 duration=attrs.get('duration', self.instance.duration),
                 day=attrs.get('day', self.instance.day)
         ):
-            raise serializers.ValidationError(detail='Time not avaiable')
+            raise serializers.ValidationError(detail='Time not available')
         return attrs
 
     class Meta:
@@ -41,7 +41,7 @@ class LessonSerializer(serializers.ModelSerializer):
     user_data = UserForLessonSerializer(source='user', read_only=True)
     day_data = WorkDayForLessonSerializer(source='day', read_only=True)
     work_day_date = serializers.DateField(source='day.date', read_only=True)
-    
+
     def validate(self, attrs):
         if not Lesson.is_avaiable_time(
                 start=attrs.get('start'),
@@ -65,6 +65,7 @@ class WorkDaySerializer(serializers.ModelSerializer):
     available = serializers.BooleanField(read_only=True)
     lessons_ex = serializers.BooleanField(read_only=True)
     year_of_workday = serializers.CharField(read_only=True)
+
     class Meta:
         model = WorkDay
         fields = ['id', 'available', 'date', 'start', 'finish', 'lessons_ex', 'year_of_workday']
@@ -73,8 +74,8 @@ class WorkDaySerializer(serializers.ModelSerializer):
 class WorkDayRetrieveSerializer(serializers.ModelSerializer):
     available = serializers.BooleanField(read_only=True)
     lessons = LessonSerializer(many=True, read_only=True)
+
     class Meta:
         model = WorkDay
         fields = ['slug', 'id', 'available', 'date', 'start', 'finish', 'start_break_time',
                   'finish_break_time', 'lessons']
-

@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django.contrib.admin.widgets import AdminTimeWidget
+from django.db import models
+
 from .models import WorkDay, Lesson, get_time_interval
 from django.contrib.admin.decorators import display
 from django import forms
@@ -12,7 +14,8 @@ from django.utils.dates import MONTHS
 
 class CustomSelectDateWidget(SelectDateWidget):
 
-    def init(self, attrs=None, years=None, months=None, empty_label=None):
+    def __init__(self, attrs=None, years=None, months=None, empty_label=None):
+        super().__init__(attrs, years, months, empty_label)
         self.attrs = attrs or {}
 
         # Optional list or tuple of years to use in the "year" select box.
@@ -20,7 +23,7 @@ class CustomSelectDateWidget(SelectDateWidget):
             self.years = years
         else:
             this_year = datetime.date.today().year
-            self.years = range(this_year - 100, this_year + 20)
+            self.years = range(this_year - 3, this_year + 5)
 
         # Optional dict of months to use in the "month" select box.
         if months:
@@ -46,7 +49,7 @@ class CustomSelectDateWidget(SelectDateWidget):
 
 
 class WorkDayAdminForm(forms.ModelForm):
-    # start = forms.TimeField(widget=AdminTimeWidget(format='%H:%M'))
+    start = forms.TimeField(widget=AdminTimeWidget(format='%H:%m'))  # Не работает
 
     class Meta:
         model = WorkDay
@@ -65,6 +68,9 @@ class WorkDayAdmin(admin.ModelAdmin):
     forms = WorkDayAdminForm
     readonly_fields = ('slug',)
     search_fields = ('slug',)
+    formfield_overrides = {
+        models.DateField: {'widget': CustomSelectDateWidget},
+    }
 
     @display(description='lessons amount')
     def lessons_amount(self, obj):

@@ -1,17 +1,13 @@
-import datetime
-from django.db.models import Exists, OuterRef, F, Value, CharField
-from django.shortcuts import render
+from django.db.models import Exists, OuterRef
 from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.status import HTTP_200_OK, HTTP_201_CREATED
 from django.contrib.auth import get_user_model
 from schedule.models import Lesson, WorkDay
 from schedule.serializer import LessonSerializer, WorkDaySerializer, LessonPatchSerializer, WorkDayRetrieveSerializer
-from django.conf import settings
 from rest_framework.exceptions import NotFound
-from rest_framework.decorators import api_view, throttle_classes, permission_classes
-from rest_framework.throttling import UserRateThrottle
-from django.db.models.functions import Cast, ExtractYear
+from rest_framework.decorators import api_view, permission_classes
+from django.db.models.functions import ExtractYear
 
 
 class LessonViewSet(viewsets.ModelViewSet):
@@ -25,7 +21,6 @@ class LessonViewSet(viewsets.ModelViewSet):
         return LessonSerializer
 
     def create(self, request, *args, **kwargs):
-        # user = request.user
         user_model = get_user_model()
         user = user_model.objects.first()
         request.data["user"] = user.id

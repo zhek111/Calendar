@@ -12,19 +12,9 @@ BREAK_START = datetime.time(13, 00)
 BREAK_FINISH = datetime.time(14, 00)
 
 
-def is_half_hour_validator(value):
+def is_half_hour_validator(value: datetime.time) -> None:
     if value.minute % 30 != 0 or value.second != 0:
         raise ValidationError(message='The set time must be a multiple of 30 minutes.')
-
-
-def time_of_function(function):
-    def wrapper(*args, **kvargs):
-        startTime = datetime.datetime.now()
-        result = function(*args, **kvargs)
-        print("Used time:", datetime.datetime.now() - startTime)
-        return result
-
-    return wrapper
 
 
 def time_to_float(time: datetime.time) -> float:
@@ -43,16 +33,17 @@ def get_event_duration(start: float, stop: float) -> set:
     return set(duration)
 
 
-def get_time_interval(time: list) -> list[tuple]:
+def get_time_interval(time_in_float: list) -> list[tuple]:
     intervals = []
-    for i, d in enumerate(time):
-        if time[i - 1] != d - 0.5:
-            start = d
-        if i + 1 < len(time):
-            if time[i + 1] != d + 0.5:
-                intervals.append((start, d + 0.5))
-        if i + 1 >= len(time):
-            intervals.append((start, d + 0.5))
+    for i, time in enumerate(time_in_float):
+        start = time
+        if time_in_float[i - 1] != time - 0.5:
+            start = time
+        if i + 1 < len(time_in_float):
+            if time_in_float[i + 1] != time + 0.5:
+                intervals.append((start, time + 0.5))
+        if i + 1 >= len(time_in_float):
+            intervals.append((start, time + 0.5))
     return intervals
 
 
@@ -107,7 +98,6 @@ class WorkDay(models.Model):
         if errors:
             raise ValidationError(message=errors)
 
-    # @time_of_function
     def available_time(self, lesson_start=None) -> list:
         if not self.available:
             return []
@@ -182,7 +172,7 @@ class Lesson(models.Model):
             return time_lesson < free_time
         return False
 
-    def can_be_delete(self, difference: int = DIFFERENCE) -> bool:
+    def can_be_delete(self) -> bool:
         day = self.day.date
         time_ = self.start
         lesson_start = datetime.datetime(year=day.year, month=day.month, day=day.day, hour=time_.hour,
@@ -203,22 +193,7 @@ class Lesson(models.Model):
         unique_together = ['day', 'start']
         ordering = ['day', 'start']
 
-# def foo(year):
-#     bar = range(datetime.date(year, 1, 1), datetime.date(year, 12, 31))
-#     data = {
-#         'available': True
-#         'start': 
-#     }
-#     for d in bar:
-#         if d != выходной
-#         WorkDay.objects.create(date=d, **data)
-# 
-# import pandas as pd
-# import datetime
-# 
-# datelist = pd.bdate_range(datetime.date(2022, 1, 1), periods=365).to_pydatetime().tolist()
 
-# TODO  полностью убрать комментарии(кроме подсказок), тудушки, закомментированные части. 
 # TODO залить в ветку девелопмент
 # TODO добавить в разработчики по почте
 # TODO сделать пулреквест в ветку мейн
